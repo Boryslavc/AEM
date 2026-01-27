@@ -1,0 +1,31 @@
+{
+  "home": {
+    "title": "Welcome Home",
+    "content": "This is the home page",
+    "languages": {
+      "fr": {
+        "title": "Bienvenue",
+        "content": "Ceci est la page d'accueil"
+      }
+    },
+    "versions": {
+      "v1": {
+        "title": "Home v1",
+        "content": "Old version of home"
+      }
+    },
+    "about": {
+      "title": "About Us",
+      "content": "Learn more about us"
+    }
+  },
+  "blog": {
+    "title": "Blog",
+    "posts": {
+      "first-post": {
+        "title": "My First Post",
+        "content": "Hello world!"
+      }
+    }
+  }
+}

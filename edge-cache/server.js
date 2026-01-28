@@ -6,10 +6,17 @@ const requestLogger = require("./middleware/requestLogger");
 const { handleRequest } = require('./services/originClient');
 
 require("dotenv").config({ path: "./config/.env" });
+
 const PORT = process.env.PORT || 4000;
 const ORIGIN = process.env.ORIGIN || 'http://localhost:3000';
 
 app.use(requestLogger);
 app.use("/",handleRequest);
+
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).send("Something broke!");
+    }
+)
 
 app.listen(PORT, () => console.log(`Edge Cache listening on port ${PORT}!`));

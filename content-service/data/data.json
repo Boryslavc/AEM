@@ -1,31 +1,182 @@
 {
-  "home": {
-    "title": "Welcome Home",
-    "content": "This is the home page",
-    "languages": {
-      "fr": {
-        "title": "Bienvenue",
-        "content": "Ceci est la page d'accueil"
-      }
+  "pages": [
+    {
+      "jcr:primaryType": "cq:Page",
+      "contentType": "article",
+      "contentName": "getting-started",
+      "versions": [
+        {
+          "version": "v1",
+          "jcr:content": {
+            "jcr:primaryType": "cq:PageContent",
+            "sling:resourceType": "mycms/components/article",
+            "title": "Getting Started",
+            "subtitle": "Basics for beginners",
+            "description": "Introductory article for new users.",
+            "language": "en",
+            "status": "published",
+            "seo": {
+              "metaTitle": "Getting Started Guide",
+              "metaDescription": "Learn the basics of our platform",
+              "canonicalUrl": "/article/getting-started"
+            },
+            "audit": {
+              "createdBy": "admin",
+              "createdAt": "2026-01-10T09:30:00Z",
+              "lastModifiedBy": "editor",
+              "lastModifiedAt": "2026-01-20T11:15:00Z"
+            },
+            "components": [
+              { "jcr:primaryType": "nt:unstructured", "sling:resourceType": "mycms/components/text", "id": "text-1", "text": "Welcome to the platform!" },
+              { "jcr:primaryType": "nt:unstructured", "sling:resourceType": "mycms/components/image", "id": "image-1", "src": "/assets/images/getting-started.png", "alt": "Getting started image" }
+            ]
+          }
+        },
+        {
+          "version": "v2",
+          "jcr:content": {
+            "jcr:primaryType": "cq:PageContent",
+            "sling:resourceType": "mycms/components/article",
+            "title": "Getting Started (Updated)",
+            "subtitle": "Basics for beginners",
+            "description": "Updated article with latest tips.",
+            "language": "en",
+            "status": "published",
+            "seo": {
+              "metaTitle": "Getting Started Guide v2",
+              "metaDescription": "Updated guide for new users",
+              "canonicalUrl": "/article/getting-started"
+            },
+            "audit": {
+              "createdBy": "admin",
+              "createdAt": "2026-01-10T09:30:00Z",
+              "lastModifiedBy": "editor",
+              "lastModifiedAt": "2026-01-25T14:12:00Z"
+            },
+            "components": [
+              { "jcr:primaryType": "nt:unstructured", "sling:resourceType": "mycms/components/text", "id": "text-1", "text": "Welcome to the updated platform!" },
+              { "jcr:primaryType": "nt:unstructured", "sling:resourceType": "mycms/components/image", "id": "image-1", "src": "/assets/images/getting-started-v2.png", "alt": "Updated getting started image" }
+            ]
+          }
+        }
+      ]
     },
-    "versions": {
-      "v1": {
-        "title": "Home v1",
-        "content": "Old version of home"
-      }
+    {
+      "jcr:primaryType": "cq:Page",
+      "contentType": "blog",
+      "contentName": "cms-tips",
+      "versions": [
+        {
+          "version": "v1",
+          "jcr:content": {
+            "jcr:primaryType": "cq:PageContent",
+            "sling:resourceType": "mycms/components/blog",
+            "title": "Top 10 CMS Tips",
+            "description": "Boost productivity using CMS best practices.",
+            "language": "en",
+            "status": "published",
+            "seo": {
+              "metaTitle": "CMS Tips Blog",
+              "metaDescription": "Learn top tips for CMS usage",
+              "canonicalUrl": "/blog/cms-tips"
+            },
+            "audit": {
+              "createdBy": "editor",
+              "createdAt": "2026-01-12T08:20:00Z",
+              "lastModifiedBy": "editor",
+              "lastModifiedAt": "2026-01-22T10:00:00Z"
+            },
+            "components": [
+              { "jcr:primaryType": "nt:unstructured", "sling:resourceType": "mycms/components/text", "id": "text-1", "text": "Here are the top CMS tips you need to know..." },
+              { "jcr:primaryType": "nt:unstructured", "sling:resourceType": "mycms/components/image", "id": "image-1", "src": "/assets/images/cms-tips.png", "alt": "CMS tips illustration" }
+            ]
+          }
+        },
+        {
+          "version": "draft",
+          "jcr:content": {
+            "jcr:primaryType": "cq:PageContent",
+            "sling:resourceType": "mycms/components/blog",
+            "title": "Top 10 CMS Tips (Draft)",
+            "description": "Draft version of CMS tips with new examples.",
+            "language": "en",
+            "status": "draft",
+            "seo": {
+              "metaTitle": "CMS Tips Blog Draft",
+              "metaDescription": "Draft version for review",
+              "canonicalUrl": "/blog/cms-tips"
+            },
+            "audit": {
+              "createdBy": "editor",
+              "createdAt": "2026-01-20T09:00:00Z",
+              "lastModifiedBy": "editor",
+              "lastModifiedAt": "2026-01-27T10:00:00Z"
+            },
+            "components": [
+              { "jcr:primaryType": "nt:unstructured", "sling:resourceType": "mycms/components/text", "id": "text-1", "text": "Draft CMS tips content here..." }
+            ]
+          }
+        }
+      ]
     },
-    "about": {
-      "title": "About Us",
-      "content": "Learn more about us"
+    {
+      "jcr:primaryType": "cq:Page",
+      "contentType": "tutorial",
+      "contentName": "advanced-features",
+      "versions": [
+        {
+          "version": "v1",
+          "jcr:content": {
+            "jcr:primaryType": "cq:PageContent",
+            "sling:resourceType": "mycms/components/tutorial",
+            "title": "Advanced Features Tutorial",
+            "description": "Learn the advanced features of our platform.",
+            "language": "en",
+            "status": "published",
+            "seo": {
+              "metaTitle": "Advanced Features Tutorial",
+              "metaDescription": "Step-by-step tutorial for advanced users",
+              "canonicalUrl": "/tutorial/advanced-features"
+            },
+            "audit": {
+              "createdBy": "admin",
+              "createdAt": "2026-01-15T10:00:00Z",
+              "lastModifiedBy": "editor",
+              "lastModifiedAt": "2026-01-25T12:30:00Z"
+            },
+            "components": [
+              { "jcr:primaryType": "nt:unstructured", "sling:resourceType": "mycms/components/text", "id": "text-1", "text": "Step 1: Open the advanced settings..." },
+              { "jcr:primaryType": "nt:unstructured", "sling:resourceType": "mycms/components/image", "id": "image-1", "src": "/assets/images/advanced-features.png", "alt": "Advanced features" }
+            ]
+          }
+        },
+        {
+          "version": "v2",
+          "jcr:content": {
+            "jcr:primaryType": "cq:PageContent",
+            "sling:resourceType": "mycms/components/tutorial",
+            "title": "Advanced Features Tutorial (Updated)",
+            "description": "Updated tutorial with additional examples.",
+            "language": "en",
+            "status": "published",
+            "seo": {
+              "metaTitle": "Advanced Features Tutorial v2",
+              "metaDescription": "Updated step-by-step tutorial",
+              "canonicalUrl": "/tutorial/advanced-features"
+            },
+            "audit": {
+              "createdBy": "admin",
+              "createdAt": "2026-01-15T10:00:00Z",
+              "lastModifiedBy": "editor",
+              "lastModifiedAt": "2026-01-27T15:00:00Z"
+            },
+            "components": [
+              { "jcr:primaryType": "nt:unstructured", "sling:resourceType": "mycms/components/text", "id": "text-1", "text": "Step 1: Open the advanced settings..." },
+              { "jcr:primaryType": "nt:unstructured", "sling:resourceType": "mycms/components/code-snippet", "id": "code-1", "language": "javascript", "code": "console.log('Hello World');" }
+            ]
+          }
+        }
+      ]
     }
-  },
-  "blog": {
-    "title": "Blog",
-    "posts": {
-      "first-post": {
-        "title": "My First Post",
-        "content": "Hello world!"
-      }
-    }
-  }
+  ]
 }

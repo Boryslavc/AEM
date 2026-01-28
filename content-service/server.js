@@ -14,4 +14,10 @@ app.use("/content", routes);
 
 app.get("/health", (req, res)=> res.json({status: "UP"}));
 
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).send("Something broke!");
+    }
+)
+
 app.listen(PORT, () => console.log(`Content service listening on port ${PORT}`));

@@ -5,7 +5,7 @@ This repository combines two small projects to simulate a **simplified AEM Cloud
 1. **Content Service** – a headless CMS prototype acting as the origin
 2. **Edge Cache** – a lightweight CDN simulation handling caching and request routing
 
-⚠️ **Work in progress:**  
+**Work in progress:**  
 This system is under active development. Additional features and refinements are planned.
 
 ---

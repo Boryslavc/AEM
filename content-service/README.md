@@ -4,7 +4,7 @@ This project is a lightweight **headless content service** built with Node.js an
 It is designed to model the role of a **publish-tier CMS** (similar to Adobe Experience Manager Publish)
 in a modern cloud-based content delivery architecture.
 
-⚠️ **Work in progress:**  
+**Work in progress:**  
 This project is actively evolving. Additional functionality and improvements are planned.
 
 ---

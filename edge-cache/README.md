@@ -16,7 +16,6 @@ It demonstrates how edge caches handle HTTP requests, serve content from cache, 
 - **TTL-based expiration:** Cached entries expire after a configurable time.
 - **Origin shielding:** The edge cache prevents unnecessary load on the origin service.
 - **Request logging:** Tracks requests, cache hits/misses, and response times.
-- **Extensible:** Designed to add features like cache invalidation, rate limiting, or metrics dashboards.
 
 ---
 
@@ -31,7 +30,7 @@ It demonstrates how edge caches handle HTTP requests, serve content from cache, 
    - `X-Cache: HIT` or `X-Cache: MISS`
    - Original origin headers preserved.
 
-> This flow mirrors how **CDNs like Fastly** work in AEM Cloud Service.
+This flow mirrors how **CDNs like Fastly** work in AEM Cloud Service.
 
 ---
 

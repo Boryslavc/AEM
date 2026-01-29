@@ -1,17 +1,15 @@
-version: "3.9"
-
 services:
   content-service:
     build: ./content-service
     container_name: content-service
     ports:
-      - "4000:4000"
+      - "3000:3000"
 
   edge-cache:
     build: ./edge-cache
     container_name: edge-cache
     ports:
-      - "3000:3000"
+      - "4000:4000"
     depends_on:
       - content-service
 
@@ -26,6 +24,6 @@ services:
     image: grafana/promtail:2.9.0
     container_name: promtail
     volumes:
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./monitoring/promtail-config.yaml:/etc/promtail/config.yaml
     command: -config.file=/etc/promtail/config.yaml

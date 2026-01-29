@@ -3,7 +3,7 @@ const cache = require('../cache/memoryCache');
 const buildCacheKey = require('../utils/cacheKey');
 const { isCacheable, getTTL } = require('../config/cacheRules');
 
-const BASE_URL = process.env.ORIGIN || "http://localhost:3000";
+const BASE_URL = process.env.ORIGIN || "http://content-service:3000";
 
 async function handleRequest(req, res){
     

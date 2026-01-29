@@ -6,6 +6,8 @@ const { isCacheable, getTTL } = require('../config/cacheRules');
 const BASE_URL = process.env.ORIGIN || "http://localhost:3000";
 
 async function handleRequest(req, res){
+    
+    console.log(`Request received for: ${req.originalUrl}`);
     const cacheKey = buildCacheKey(req);
     if(isCacheable(req)){
         const cached = cache.get(cacheKey);

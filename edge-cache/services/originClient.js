@@ -6,13 +6,10 @@ const { isCacheable, getTTL } = require('../config/cacheRules');
 const BASE_URL = process.env.ORIGIN || "http://content-service:3000";
 
 async function handleRequest(req, res){
-    
-    console.log(`Request received for: ${req.originalUrl}`);
     const cacheKey = buildCacheKey(req);
     if(isCacheable(req)){
         const cached = cache.get(cacheKey);
         if(cached){
-            console.log("Cache Hit");
             res.set(cached.headers);
             res.set('X-Cache', 'HIT');
             return res.status(cached.status).send(cached.data);
@@ -28,7 +25,6 @@ async function handleRequest(req, res){
             cache.set(cacheKey, data);
         }
         res.set("X-Cache", "MISS");
-        console.log("Cache miss");
         res.status(response.status).send(response.data);
     }
     catch(err){

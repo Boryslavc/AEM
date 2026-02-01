@@ -16,4 +16,8 @@ function set(key, value){
     store.set(key, value);
 }
 
-module.exports = {get, set};
+function clear(){
+    store.clear();
+}
+
+module.exports = {get, set, clear};

@@ -42,4 +42,7 @@ const pinoLogger = pino_http({
     },
 });
 
-module.exports = pinoLogger;
+module.exports = { 
+    logger: coreLogger,
+    httpLogger: pinoLogger
+};

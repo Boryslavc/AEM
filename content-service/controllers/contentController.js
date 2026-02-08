@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
-const { versions } = require("process");
+const taskQueue = require("../utils/taskQueue");
+
 
 const dataPath = path.join(__dirname, "../data/data.json");
 
@@ -13,7 +14,6 @@ function saveData(data) {
 }
 
 function getContent(req, res){
-    const contentPath = req.path;
     const {contentType, contentName, version} = req.params;
 
     const data = loadData()
@@ -43,6 +43,9 @@ function createPage(req, res) {
         return res.status(409).json({ error: "Page already exists" });
     }
 
+    //Respond first, process data later in the background
+    res.status(201).json({ message: "Page created" });
+
     data.pages.push({
         primaryType: "cq:Page",
         contentType,
@@ -50,8 +53,7 @@ function createPage(req, res) {
         versions: [initialVersion]
     });
 
-    saveData(data);
-    res.status(201).json({ message: "Page created" });
+    taskQueue.runTask(() => saveData(data));
 }
 
 function createVersion(req, res) {
@@ -76,10 +78,11 @@ function createVersion(req, res) {
         return res.status(409).json({ error: "Version already exists" });
     }
 
-    page.versions.push(newVersion);
-    saveData(data);
-
+    //Respond first, process data later in the background
     res.status(201).json({ message: "Version created" });
+
+    page.versions.push(newVersion);
+    taskQueue.runTask(() => saveData(data));
 }
 
 function deletePage(req, res) {
@@ -94,14 +97,12 @@ function deletePage(req, res) {
         return res.status(404).json({ error: "Page not found" });
     }
 
-    data.pages.splice(index, 1);
-    saveData(data);
-
+    //Respond first, process data later in the background
     res.status(204).send();
+
+    data.pages.splice(index, 1);
+    taskQueue.runTask(() => saveData(data));
 }
 
-function verifyRequiredActionParameters(req, action){
-
-}
 
 module.exports = { getContent, createPage, createVersion, deletePage };

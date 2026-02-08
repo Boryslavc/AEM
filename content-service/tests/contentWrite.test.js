@@ -65,4 +65,19 @@ describe("Content Write APIs", () => {
 
       expect(res.statusCode).toBe(204);
   });
+
+  test("task queue works", async () => {
+    await request(app).post("/content").send({
+      contentType: "article",
+      contentName: "some-article",
+      initialVersion: { version: "v1", content: { title : "Test"} }
+    });
+
+    //simulate delayed response
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    const res = await request(app).get("/content/article/some-article/v1" )
+    expect(res.statusCode).toBe(200);
+    expect(res.body.title).toBe("Test");
+  })
 });

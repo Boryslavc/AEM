@@ -1,68 +1,58 @@
-# Content Service – Headless CMS Prototype
+# Content Service (AEM Publish Simulation)
 
-This project is a lightweight **headless content service** built with Node.js and Express.
-It is designed to model the role of a **publish-tier CMS** (similar to Adobe Experience Manager Publish)
-in a modern cloud-based content delivery architecture.
+Simulates AEM Publish instances serving **rendered HTML pages** for multiple clients in multiple languages.
 
----
+## Multi-Tenant Architecture
 
-## Purpose
+```
+pages/
+├── client1/          # Enterprise Software
+│   ├── en/
+│   ├── de/
+│   └── fr/
+├── client2/          # E-commerce Retail
+│   ├── en/
+│   ├── de/
+│   └── fr/
+└── client3/          # Financial Services
+    ├── en/
+    ├── de/
+    └── fr/
+```
 
-The goal of this project is to gain hands-on understanding of:
-- Content modeling
-- Headless CMS principles
-- Separation of content management from application logic
-- HTTP-based content delivery in cloud environments
+## Endpoints
 
-Rather than replicating a full CMS, the focus is on **core concepts** that apply to large-scale systems such as AEM Cloud Service.
+```
+GET /pages/:client/:lang/:pageName
+GET /assets/:assetName
+GET /health
+```
 
----
+## Examples
 
-## Key Features (Current)
+```bash
+# Client1 - English
+curl http://localhost:3000/pages/client1/en/home
 
-- REST API for serving structured content
-- Clear separation between content data and application code
-- Stateless service design suitable for horizontal scaling
-- Simple content store (in-memory / JSON-based)
+# Client2 - German
+curl http://localhost:3000/pages/client2/de/home
 
----
+# Client3 - French
+curl http://localhost:3000/pages/client3/fr/home
+```
 
-## Architecture Overview
+## Async Request Handling
 
-Client / Frontend -> Content Service (Node.js + Express) -> Content Store (in-memory / JSON)
+All page requests are processed through a **task queue** with concurrency control (3 workers), simulating real AEM publish instance behavior under load.
 
+## Cache Strategy
 
-The service:
-- exposes content via HTTP endpoints
-- does not perform caching itself
-- assumes caching and acceleration are handled upstream
+- **HTML pages**: 5 min TTL
+- **Assets**: 24 hour TTL
+- Headers: `X-Client`, `X-Language` for CDN routing
 
-This mirrors how **AEM Publish instances** typically operate behind a CDN.
+## Scale Simulation
 
----
-
-## Concepts Explored
-
-- Content modeling and API design
-- Decoupling content management from application logic
-- Stateless service behavior and scalability
-- The role of a publish tier in content-driven platforms
-
----
-
-## Relevance to AEM Cloud
-
-Adobe Experience Manager Cloud Service separates:
-- content authoring
-- content publishing
-- content delivery
-
-This project focuses specifically on understanding the **publish-side responsibilities** and how structured content is delivered to downstream systems.
-
----
-
-## Planned Improvements
-
-- Persistent storage layer
-- Validation of content models
-- Improved API structure and error handling
+- 3 clients × 3 languages (en, de, fr) = 9 site variants
+- Demonstrates multi-tenant content delivery
+- Realistic for AEM Cloud Service architecture

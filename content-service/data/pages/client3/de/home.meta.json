@@ -1,0 +1,12 @@
+{
+  "client": "client3",
+  "language": "de",
+  "pageName": "home",
+  "version": "1.5.2",
+  "contentType": "text/html",
+  "cacheControl": "public, max-age=600, s-maxage=900",
+  "lastModified": "2024-01-23T08:50:00Z",
+  "etag": "client3-de-home-v1.5.2",
+  "author": "finance-team",
+  "publishDate": "2024-01-22T07:00:00Z"
+}

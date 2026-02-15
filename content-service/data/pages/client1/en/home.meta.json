@@ -1,0 +1,12 @@
+{
+  "client": "client1",
+  "language": "en",
+  "pageName": "home",
+  "version": "1.2.0",
+  "contentType": "text/html",
+  "cacheControl": "public, max-age=300, s-maxage=600",
+  "lastModified": "2024-01-20T14:30:00Z",
+  "etag": "client1-en-home-v1.2.0",
+  "author": "marketing-team",
+  "publishDate": "2024-01-15T10:00:00Z"
+}

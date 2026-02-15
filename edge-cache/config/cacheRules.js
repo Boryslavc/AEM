@@ -5,7 +5,8 @@ function isCacheable(req){
 }
 
 function getTTL(req){
-    if(req.originalUrl.startsWith("/content")) return 60_000;
+    if(req.originalUrl.includes("/pages/")) return 300_000;
+    if(req.originalUrl.includes("/assets/")) return 86400_000;
     return 5000;
 }
 

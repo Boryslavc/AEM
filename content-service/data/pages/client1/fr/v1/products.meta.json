@@ -1,12 +1,12 @@
 {
   "client": "client1",
-  "language": "de",
+  "language": "fr",
   "pageName": "products",
-  "version": "2.1.0",
+  "version": "1.1.0",
   "contentType": "text/html",
   "cacheControl": "public, max-age=180, s-maxage=300",
-  "lastModified": "2024-01-22T16:25:00Z",
-  "etag": "client1-de-products-v2.1.0",
+  "lastModified": "2024-01-22T16:30:00Z",
+  "etag": "client1-fr-products-v2.1.0",
   "author": "product-team",
   "publishDate": "2024-01-20T12:00:00Z"
 }

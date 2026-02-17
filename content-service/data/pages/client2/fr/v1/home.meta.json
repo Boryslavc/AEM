@@ -2,7 +2,7 @@
   "client": "client2",
   "language": "fr",
   "pageName": "home",
-  "version": "3.0.1",
+  "version": "1.0.1",
   "contentType": "text/html",
   "cacheControl": "public, max-age=240, s-maxage=480",
   "lastModified": "2024-01-21T11:25:00Z",

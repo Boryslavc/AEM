@@ -1,12 +1,12 @@
 {
   "client": "client2",
-  "language": "de",
+  "language": "en",
   "pageName": "home",
-  "version": "3.0.1",
+  "version": "1.0.1",
   "contentType": "text/html",
   "cacheControl": "public, max-age=240, s-maxage=480",
-  "lastModified": "2024-01-21T11:20:00Z",
-  "etag": "client2-de-home-v3.0.1",
+  "lastModified": "2024-01-21T11:15:00Z",
+  "etag": "client2-en-home-v3.0.1",
   "author": "creative-team",
   "publishDate": "2024-01-19T14:00:00Z"
 }

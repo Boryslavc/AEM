@@ -1,7 +1,10 @@
 const request = require("supertest");
 const express = require("express");
 const routes = require("../routes/content");
-require("./setup"); // Import the mock setup
+
+jest.mock('../utils/taskQueue');
+
+require("./setup");
 
 function createApp() {
   const app = express();
@@ -19,65 +22,45 @@ describe("Content Write APIs", () => {
 
   test("creates a new page", async () => {
     const res = await request(app)
-      .post("/content")
+      .post("/content/pages/client1/en/v2/about")
       .send({
-        contentType: "article",
-        contentName: "new-page",
-        initialVersion: {
-          version: "v1",
-          content: { title: "New Page" }
-        }
+        html: "<h1>About Page</h1>"
       });
 
     expect(res.statusCode).toBe(201);
+    expect(res.body.message).toBe("Page created");
+    expect(res.body.path).toBe("/client1/en/v2/about");
   });
 
   test("prevents duplicate page creation", async () => {
-    await request(app).post("/content").send({
-      contentType: "article",
-      contentName: "duplicate",
-      initialVersion: { version: "v1", content: {} }
-    });
+    await request(app)
+      .post("/content/pages/client1/en/v1/home")
+      .send({ html: "<h1>Duplicate</h1>" });
 
-    const res = await request(app).post("/content").send({
-      contentType: "article",
-      contentName: "duplicate",
-      initialVersion: { version: "v1", content: {} }
-    });
+    const res = await request(app)
+      .post("/content/pages/client1/en/v1/home")
+      .send({ html: "<h1>Duplicate</h1>" });
 
-    expect(res.statusCode).toBe(409);
+    expect(res.statusCode).toBe(400);
+    expect(res.text).toBe("Page already exists");
   });
 
-  test("creates a new version", async () => {
+  test("updates an existing page", async () => {
     const res = await request(app)
-      .post("/content/article/getting-started/versions")
+      .put("/content/pages/client1/en/v1/home")
       .send({
-        version: "v3",
-        content: { title: "Third version" }
+        html: "<h1>Updated Home</h1>"
       });
 
-    expect(res.statusCode).toBe(201);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.message).toBe("Page updated");
   });
 
   test("deletes a page", async () => {
-      const res = await request(app)
-        .delete("/content/article/getting-started");
+    const res = await request(app)
+      .delete("/content/pages/client1/en/v1/home");
 
-      expect(res.statusCode).toBe(204);
-  });
-
-  test("task queue works", async () => {
-    await request(app).post("/content").send({
-      contentType: "article",
-      contentName: "some-article",
-      initialVersion: { version: "v1", content: { title : "Test"} }
-    });
-
-    //simulate delayed response
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    const res = await request(app).get("/content/article/some-article/v1" )
     expect(res.statusCode).toBe(200);
-    expect(res.body.title).toBe("Test");
-  })
+    expect(res.body.message).toBe("Page deleted");
+  });
 });

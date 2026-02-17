@@ -1,10 +1,11 @@
 const { logger } = require("../logs/pinoLogger");
 
 class TaskQueue {
-    constructor(concurrency = 3) {
+    constructor(concurrency = 10, maxQueueSize = 1000) {
         this.taskQueue = [];
         this.consumerQueue = [];
         this.concurrency = concurrency;
+        this.maxQueueSize = maxQueueSize;
 
         // Spawn consumers
         for (let i = 0; i < concurrency; i++) {
@@ -48,8 +49,20 @@ class TaskQueue {
             }
         });
     }
+
+    getStats() {
+        return {
+            queuedTasks: this.taskQueue.length,
+            idleConsumers: this.consumerQueue.length,
+            activeTasks: this.activeTaskCount,
+            concurrency: this.concurrency
+        };
+    }
 }
 
 const taskQueue = new TaskQueue(3);
 
-module.exports = { runTask: taskQueue.runTask.bind(taskQueue) };
+module.exports = { 
+    runTask: taskQueue.runTask.bind(taskQueue),
+    getQueueStats: () => taskQueue.getStats()
+ };

@@ -24,6 +24,7 @@ A production-ready simulation of **Adobe Experience Manager Cloud Service** cont
 - **TTL management**: Configurable per content type (pages: 5min, assets: 24h)
 - **Cache states**: HIT, MISS, EXPIRED, REVALIDATED
 - **Origin shielding**: Reduces backend load through efficient caching
+- **Write-through caching**: When a client updates a page (PUT/POST) via the edge, the content service updates the page and pushes the new content to the edge cache so subsequent GETs are served from cache without a round-trip to the origin. Cache entries for that path are also invalidated on write so stale data is never served.
 
 ### Monitoring
 - **Loki**: Log aggregation and storage
@@ -46,6 +47,12 @@ curl http://localhost:3000/pages/client1/en/1.2.0/home
 
 # Check cache status (look for X-Cache header)
 curl -I http://localhost:4000/pages/client1/en/1.2.0/home
+
+# Update a page through the edge cache; content service updates and pushes to edge cache
+curl -X PUT http://localhost:4000/pages/client1/en/1.2.0/home \
+  -H "Content-Type: application/json" \
+  -d '{"html":"<h1>Updated Home</h1>"}'
+# Next GET to the same URL can be served from cache (X-Cache: HIT)
 ```
 
 ---
@@ -86,7 +93,8 @@ GET    /health                                   # Health check
 
 ### Edge Cache (Port 4000)
 ```
-GET    /*  # Proxy all GET requests with caching
+GET    /*              # Proxy all requests; GET with caching, PUT/POST/DELETE forwarded to origin
+POST   /internal/cache # Internal: content-service pushes updated page content (optional secret via X-Internal-Secret)
 ```
 
 ---
@@ -107,6 +115,15 @@ GET    /*  # Proxy all GET requests with caching
 
 ### Cache Key Generation
 Based on: URL path + query parameters (header-based variation can be added)
+
+### Cache update on write (write-through + push)
+1. Client sends **PUT** or **POST** to the edge cache (e.g. `PUT /pages/client1/en/1.2.0/home` with JSON body).
+2. Edge cache forwards the request to the content service (method and body preserved).
+3. Content service updates the page and responds with success.
+4. Content service then **pushes** the new content to the edge cache via `POST /internal/cache` (path, body, ETag, Cache-Control). The next GET for that URL can be served from cache without hitting the origin.
+5. Edge cache also **invalidates** any existing cache entries for that path when it receives a successful PUT/POST/DELETE from the origin, so stale entries are never served.
+
+Optional: set `EDGE_CACHE_INTERNAL_SECRET` and `INTERNAL_API_SECRET` (same value) so that only the content service can call the edge cache’s internal cache endpoint.
 
 ---
 

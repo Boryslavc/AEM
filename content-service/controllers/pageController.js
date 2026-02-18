@@ -1,6 +1,7 @@
 const pool = require('../db/pool');
 const { runTask } = require("../utils/taskQueue");
 const { logger } = require("../logs/pinoLogger");
+const { pushPageToEdgeCache } = require("../services/edgeCachePush");
 
 function getPage(req, res) {
     runTask(async () => {
@@ -51,6 +52,13 @@ function createPage(req, res) {
             );
 
             logger.info({ client, lang, version, pageName }, "Page created successfully");
+            const path = `/pages/${client}/${lang}/${version}/${pageName}`;
+            pushPageToEdgeCache(path, {
+                data: req.body.html,
+                etag,
+                lastModified: new Date().toUTCString(),
+                cacheControl
+            });
             res.status(201).json({ 
                 message: "Page created", 
                 path: `/${client}/${lang}/${version}/${pageName}` 
@@ -92,6 +100,14 @@ function updatePage(req, res) {
         }
 
         logger.info({ client, lang, version, pageName }, "Page updated successfully");
+        const path = `/pages/${client}/${lang}/${version}/${pageName}`;
+        const cacheControl = req.get("Cache-Control") || "max-age=300";
+        pushPageToEdgeCache(path, {
+            data: req.body.html,
+            etag,
+            lastModified: new Date().toUTCString(),
+            cacheControl
+        });
         res.json({ 
             message: "Page updated", 
             path: `/${client}/${lang}/${version}/${pageName}` 

@@ -9,12 +9,17 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB}
+      EDGE_CACHE_URL: http://edge-cache:4000
+      EDGE_CACHE_INTERNAL_SECRET: ${EDGE_CACHE_INTERNAL_SECRET:-}
 
   edge-cache:
     build: ./edge-cache
     container_name: edge-cache
     ports:
       - "4000:4000"
+    environment:
+      ORIGIN: http://content-service:3000
+      INTERNAL_API_SECRET: ${EDGE_CACHE_INTERNAL_SECRET:-}
     depends_on:
       - content-service
 

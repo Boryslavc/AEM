@@ -4,11 +4,14 @@ const express = require("express");
 const app = express();
 
 const proxyRoute = require("./routes/proxy");
+const cacheRoute = require("./routes/cache");
 const pinoLogger = require("./logs/pinoLogger");
 
 const PORT = process.env.PORT || 4000;
 
 app.use(pinoLogger);
+app.use(express.json());
+app.use("/internal", cacheRoute);
 app.use("/", proxyRoute);
 
 app.use((err, req, res, next) =>{

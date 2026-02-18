@@ -161,6 +161,21 @@ Optional: set `EDGE_CACHE_INTERNAL_SECRET` and `INTERNAL_API_SECRET` (same value
 
 ---
 
+## Kubernetes (basic orchestration)
+
+A minimal Kubernetes setup is in the **`k8s/`** directory: namespace, Postgres (Secret, PVC, Deployment, Service), Content Service and Edge Cache (Deployments and Services), and an Ingress so you can run the stack on any cluster (minikube, kind, GKE, etc.).
+
+```bash
+# Build images and deploy (see k8s/README.md for cluster-specific steps)
+kubectl apply -f k8s/
+# Access via port-forward or Ingress
+kubectl -n aem port-forward svc/edge-cache 4000:4000
+```
+
+See **[k8s/README.md](k8s/README.md)** for image build/load instructions and Ingress controller setup.
+
+---
+
 ## Technology Stack
 
 - **Runtime**: Node.js + Express
@@ -168,4 +183,5 @@ Optional: set `EDGE_CACHE_INTERNAL_SECRET` and `INTERNAL_API_SECRET` (same value
 - **Logging**: Pino + Pino-HTTP
 - **Testing**: Jest + Supertest
 - **Containerization**: Docker + Docker Compose
+- **Orchestration**: Kubernetes (basic manifests in `k8s/`)
 - **Monitoring**: Grafana Loki + Promtail

@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: edge-cache
+  namespace: aem
+  labels:
+    app: edge-cache
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: edge-cache
+  template:
+    metadata:
+      labels:
+        app: edge-cache
+    spec:
+      containers:
+        - name: edge-cache
+          image: edge-cache:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 4000
+              name: http
+          env:
+            - name: ORIGIN
+              value: "http://content-service:3000"
+            - name: INTERNAL_API_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: edge-cache-internal
+                  key: INTERNAL_SECRET
+                  optional: true
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 4000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 4000
+            initialDelaySeconds: 5
+            periodSeconds: 5

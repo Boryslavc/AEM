@@ -1,0 +1,21 @@
+# Basic Ingress: routes external traffic to the edge-cache (CDN) service.
+# Requires an Ingress controller (e.g. ingress-nginx, or: minikube addons enable ingress).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: aem-ingress
+  namespace: aem
+  labels:
+    app: aem
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: edge-cache
+                port:
+                  number: 4000

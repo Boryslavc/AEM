@@ -1,7 +1,7 @@
 const axios = require("axios");
 const cache = require('../cache/memoryCache');
 const buildCacheKey = require('../utils/cacheKey');
-const { isCacheable, getTTL } = require('../config/cacheRules');
+const { isCacheable } = require('../config/cacheRules');
 
 const BASE_URL = process.env.ORIGIN || "http://localhost:3000";
 
@@ -29,7 +29,7 @@ async function handleRequest(req, res) {
 
         if (response.status === 304) {
             // Content unchanged, refresh TTL
-            cached.expiresAt = Date.now() + getTTL(req);
+            cached.expiresAt = Date.now() + parseTTL(req);
             res.set('X-Cache', 'REVALIDATED');
             return res.status(200).send(cached.data);
         }
@@ -58,7 +58,7 @@ async function sendRequestToOrigin(req, conditionalHeaders = {}) {
 }
 
 function buildCacheData(request, response){
-    const expirationDate = getTTL(request) + Date.now();
+    const expirationDate = Date.now() + parseTTL(response.headers['cache-control']);
     const data = {
         data: response.data,
         expiresAt: expirationDate,
@@ -66,6 +66,14 @@ function buildCacheData(request, response){
         lastModified: response.headers['last-modified']
     };
     return data;
+}
+
+function parseTTL(cacheControlHeader){
+    const sMaxAge = /s-maxage=(\d+)/.exec(cacheControlHeader);
+
+    const seconds = parseInt(sMaxAge[1]);
+    
+    return seconds * 1000;
 }
 
 module.exports = { handleRequest };

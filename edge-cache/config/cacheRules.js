@@ -4,10 +4,4 @@ function isCacheable(req){
     return true;
 }
 
-function getTTL(req){
-    if(req.originalUrl.includes("/pages/")) return 300_000;
-    if(req.originalUrl.includes("/assets/")) return 86400_000;
-    return 5000;
-}
-
-module.exports= {isCacheable, getTTL};
+module.exports= {isCacheable};

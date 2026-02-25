@@ -1,187 +1,176 @@
 # Mini AEM Cloud Delivery Pipeline
 
-A production-ready simulation of **Adobe Experience Manager Cloud Service** content delivery architecture, combining:
+A simulation of **Adobe Experience Manager Cloud Service** content delivery: an origin (Content Service), an edge layer (Edge Cache), and optional logging (Loki + Promtail). The goal is to mirror real-world behavior: proper **HTTP cache semantics**, **conditional revalidation**, **multi-tenancy**, and **write-through invalidation** in one small stack.
 
-1. **Content Service** – Multi-tenant origin server with CRUD operations and versioning
-2. **Edge Cache** – CDN layer with intelligent caching, revalidation, and cache key generation
-3. **Monitoring Stack** – Loki + Promtail for centralized logging
+What this demonstrates:
 
----
+- **CDN-style pipeline:** Client → Edge Cache → Origin (Content Service) → Postgres. GETs are cached at the edge; PUT/POST/DELETE are forwarded and drive cache invalidation and optional push.
+- **Cache state discipline:** The edge exposes explicit states (HIT, MISS, EXPIRED, REVALIDATED) and implements **ETag- and Last-Modified–based conditional requests**; TTL is inherited from the origin’s `Cache-Control` rather than hard-coded.
+- **Multi-tenant, versioned content:** Content is keyed by client, language, and version (e.g. `client1/en/1.2.0/home`) with full CRUD and metadata (ETag, Cache-Control). A task queue limits concurrency to approximate publish-tier backpressure.
+- **Write-through and invalidation:** When a client updates a page via the edge, the origin updates the page, then pushes the new content into the edge cache and the edge invalidates existing entries for that path—so the pipeline stays consistent without stale reads.
 
-## Core Features
-
-### Content Service (Origin)
-- **Multi-tenant architecture**: 3 clients × 3 languages × versioned content
-- **CRUD operations**: Full REST API for page management
-- **Content versioning**: Semantic versioning (e.g., 1.2.0, 2.1.0)
-- **Metadata management**: ETag, Last-Modified, Cache-Control headers
-- **Task queue**: Concurrency-controlled request processing (3 workers)
-- **Structured logging**: Pino logger with HTTP request tracking
-
-### Edge Cache (CDN)
-- **Intelligent caching**: URL-based cache key generation
-- **Cache revalidation**: Conditional requests with If-None-Match/If-Modified-Since
-- **TTL management**: Configurable per content type (pages: 5min, assets: 24h)
-- **Cache states**: HIT, MISS, EXPIRED, REVALIDATED
-- **Origin shielding**: Reduces backend load through efficient caching
-- **Write-through caching**: When a client updates a page (PUT/POST) via the edge, the content service updates the page and pushes the new content to the edge cache so subsequent GETs are served from cache without a round-trip to the origin. Cache entries for that path are also invalidated on write so stale data is never served.
-
-### Monitoring
-- **Loki**: Log aggregation and storage
-- **Promtail**: Docker log collection from all services
-- **Structured logs**: JSON format for easy querying
+The mappings to real AEM building blocks (Fastly CDN, Dispatcher, Sling job queue, etc.) are summarized in [How this maps to AEM](#how-this-maps-to-aem) below.
 
 ---
 
-## Quick Start
+## Architecture
+
+```
+                    ┌─────────────────┐
+   Client           │   Edge Cache    │  GET: cache HIT/MISS/revalidate
+   Request  ────────►│   (Port 4000)   │  PUT/POST/DELETE: forward → origin
+                    └────────┬────────┘
+                             │
+                             ▼
+                    ┌─────────────────┐     ┌──────────────┐
+                    │ Content Service │────►│   Postgres   │
+                    │  (Port 3000)    │     │   (5432)     │
+                    └─────────────────┘     └──────────────┘
+```
+
+---
+
+## What this demonstrates
+
+**Edge cache**
+
+- Implements **HTTP cache semantics**: conditional revalidation with `If-None-Match` (ETag) and `If-Modified-Since`; 304 responses refresh TTL without re-fetching body; 200 responses replace the cached entry.
+- **TTL comes from the origin**: the edge parses `Cache-Control` (`s-maxage` / `max-age`) from the origin response instead of using fixed values, so pages and assets can have different lifetimes (e.g. 5 min vs 24h).
+- **Explicit cache states** (see table below): every cached response is labeled HIT, MISS, EXPIRED, or REVALIDATED via the `X-Cache` header, so you can see exactly how the request was satisfied.
+
+**Content service**
+
+- **Multi-tenant, versioned content model**: clients × languages × versions × page names, with CRUD and metadata (ETag, Last-Modified, Cache-Control) suitable for cache negotiation.
+- **Concurrency control**: a small task queue (e.g. 3 workers) to limit concurrent work and simulate publish-instance backpressure (analogous to Sling job processing).
+
+**Cache states (edge)**
+
+|      State      |                             Meaning                                                 |
+|-----------------|-------------------------------------------------------------------------------------|
+| **HIT**         | Served from cache; entry still within TTL.                                          |
+| **MISS**        | No valid entry; fetched from origin and stored.                                     |
+| **EXPIRED**     | Entry was past TTL, revalidated , origin returned cache updated, new content served |
+| **REVALIDATED** | Entry was past TTL, origin detected no changes, new TTL served                      |
+
+Check the `X-Cache` response header to see which state applied. More detail: [edge-cache README](edge-cache/README.md).
+
+---
+
+## How this maps to AEM
+
+This simulation is intentionally aligned with AEM Cloud Service building blocks so the behavior is recognizable to anyone who has worked with the real stack.
+
+|            This project               |                AEM equivalent                              |
+|---------------------------------------|------------------------------------------------------------|
+| Edge cache                            | **Fastly CDN** (edge caching, cache rules)                 |
+| Conditional revalidation              | **Dispatcher** ETag/If-Modified-Sinceconditional requests  |
+| TTL from origin Cache-Control         | **Dispatcher cache rules** / cache headers from publish    |
+| Cache invalidation on write           | **Dispatcher flush agents** / publish → cache update       |
+| Origin shielding                      | **Dispatcher** as reverse proxy in front of publish        |
+| Write-through                         | **Publish → Dispatcher** cache update after content change |
+| Multi-tenant                          | **Multiple sites, languages, content versions** in AEM     |
+| Task queue, concurrency limit         | **Sling job queue**, backpressure on publish               |
+| CRUD + metadata (ETag, Cache-Control) | **JCR/Sling** APIs, cache-related properties and headers   |
+
+---
+
+## Getting Started
+
+**Prerequisites:** Docker and Docker Compose.
 
 ```bash
-# Start all services
+# 1. Clone the repo
+git clone <repo-url>
+cd aem
+
+# 2. (Optional) Copy env and edit if needed — see "Environment variables" below
+cp .env.example .env
+
+# 3. Start all services
 docker-compose up -d
 
-# Test content delivery through edge cache
+# 4. Verify: request through edge cache (CDN)
 curl http://localhost:4000/pages/client1/en/1.2.0/home
 
-# Direct origin access
-curl http://localhost:3000/pages/client1/en/1.2.0/home
-
-# Check cache status (look for X-Cache header)
+# 5. Check cache header (first call: MISS, second: HIT)
 curl -I http://localhost:4000/pages/client1/en/1.2.0/home
-
-# Update a page through the edge cache; content service updates and pushes to edge cache
-curl -X PUT http://localhost:4000/pages/client1/en/1.2.0/home \
-  -H "Content-Type: application/json" \
-  -d '{"html":"<h1>Updated Home</h1>"}'
-# Next GET to the same URL can be served from cache (X-Cache: HIT)
 ```
 
----
+**Direct origin (no cache):** `curl http://localhost:3000/pages/client1/en/1.2.0/home`
 
-## Content Structure
+**Update a page through the edge:**  
+`curl -X PUT http://localhost:4000/pages/client1/en/1.2.0/home -H "Content-Type: application/json" -d '{"html":"<h1>Updated</h1>"}'`
 
-```
-pages/
-├── client1/ (Enterprise Software)
-│   ├── en/ → home (v1.2.0), about (v1.0.0), products (v2.1.0)
-│   ├── de/ → home, about, products
-│   └── fr/ → home, about, products
-├── client2/ (Digital Agency)
-│   └── en/de/fr/ → home (v3.0.1)
-└── client3/ (Financial Services)
-    └── en/de/fr/ → home (v1.5.2)
-```
-
-Each page includes:
-- HTML content
-- Metadata file (.meta.json) with caching directives
-- Version tracking
-- ETag for cache validation
+Service-level details: [content-service](content-service/README.md), [edge-cache](edge-cache/README.md).
 
 ---
 
 ## API Endpoints
 
-### Content Service (Port 3000)
-```
-GET    /pages/:client/:lang/:version/:pageName  # Retrieve page
-POST   /pages/:client/:lang/:version/:pageName  # Create page
-PUT    /pages/:client/:lang/:version/:pageName  # Update page
-DELETE /pages/:client/:lang/:version/:pageName  # Delete page
-GET    /assets/:assetName                       # Retrieve asset
-GET    /health                                   # Health check
-```
+**Content Service (port 3000)** — *authoritative API*
 
-### Edge Cache (Port 4000)
-```
-GET    /*              # Proxy all requests; GET with caching, PUT/POST/DELETE forwarded to origin
-POST   /internal/cache # Internal: content-service pushes updated page content (optional secret via X-Internal-Secret)
-```
+| Method |                  Path                     |  Description  |
+|--------|-------------------------------------------|---------------|
+| GET    | `/pages/:client/:lang/:version/:pageName` | Retrieve page |
+| POST   | `/pages/:client/:lang/:version/:pageName` | Create page   |
+| PUT    | `/pages/:client/:lang/:version/:pageName` | Update page   |
+| DELETE | `/pages/:client/:lang/:version/:pageName` | Delete page   |
+| GET    | `/health`                                 | Health check  |
 
----
+**Content layout:** `pages/<client>/<lang>/<version>/<pageName>` (e.g. `client1`, `client2`, `client3`; `en`, `de`, `fr`; versions like `1.2.0`).
 
-## HTTP Caching Strategy
+**Edge Cache (port 4000)** — proxies to content service
 
-### Cache-Control Headers
-- **Pages**: `public, max-age=300, s-maxage=600` (5min browser, 10min CDN)
-- **Assets**: `public, max-age=86400` (24 hours)
-- **Dynamic content**: Varies by client and page type
-
-### Cache Revalidation
-1. Edge cache checks expiration
-2. Sends conditional request with ETag/Last-Modified
-3. Origin responds:
-   - `304 Not Modified` → Refresh TTL, serve cached content
-   - `200 OK` → Update cache with new content
-
-### Cache Key Generation
-Based on: URL path + query parameters (header-based variation can be added)
-
-### Cache update on write (write-through + push)
-1. Client sends **PUT** or **POST** to the edge cache (e.g. `PUT /pages/client1/en/1.2.0/home` with JSON body).
-2. Edge cache forwards the request to the content service (method and body preserved).
-3. Content service updates the page and responds with success.
-4. Content service then **pushes** the new content to the edge cache via `POST /internal/cache` (path, body, ETag, Cache-Control). The next GET for that URL can be served from cache without hitting the origin.
-5. Edge cache also **invalidates** any existing cache entries for that path when it receives a successful PUT/POST/DELETE from the origin, so stale entries are never served.
-
-Optional: set `EDGE_CACHE_INTERNAL_SECRET` and `INTERNAL_API_SECRET` (same value) so that only the content service can call the edge cache’s internal cache endpoint.
+|      Method       |       Path        |                      Description                         |
+|-------------------|-------------------|----------------------------------------------------------|
+| GET               | `/*`              | Proxied with caching (HIT/MISS/REVALIDATED/EXPIRED)      |
+| PUT, POST, DELETE | `/*`              | Forwarded to origin; cache for that path invalidated     |
+| POST              | `/internal/cache` | Content-service pushes updated content (optional secret) |
 
 ---
 
-## Key Concepts Demonstrated
+## HTTP Caching
 
-### Multi-Tenancy
-- Multiple clients sharing infrastructure
-- Isolated content per client
-- Language-specific content delivery
+- **Cache-Control:** Pages typically `max-age=300` (5 min), `s-maxage=600` (10 min CDN). Assets can use longer TTL (e.g. 24h); edge uses the origin’s `Cache-Control` for TTL.
+- **Revalidation:** Edge sends If-None-Match / If-Modified-Since; origin responds 304 (refresh TTL, keep serving cache) or 200 (update cache and serve).
+- **Cache key:** URL path + query params (and optional Accept-Language).
 
-### Content Versioning
-- Semantic versioning for content releases
-- Version-specific URLs for cache busting
-- Metadata tracking per version
-
-### HTTP Caching
-- Cache hits/misses/revalidation
-- TTL-based expiration
-- Conditional requests (304 responses)
-- ETag and Last-Modified validation
-
-### Scalability Patterns
-- Task queue for concurrency control
-- Origin shielding via edge cache
-- Stateless service design
+**Write-through + push:** On successful PUT/POST via the edge, the content service updates the page and pushes the new content to the edge via `POST /internal/cache`. The edge also invalidates existing cache entries for that path. Optional: set `EDGE_CACHE_INTERNAL_SECRET` / `INTERNAL_API_SECRET` (same value) to protect `/internal/cache`.
 
 ---
 
-## Monitoring & Observability
 
-- **Loki UI**: http://localhost:3100
-- **Structured logs**: All services emit JSON logs
-- **Request tracking**: HTTP method, URL, status, response time
-- **Cache metrics**: Hit/miss ratio visible in logs
+## Monitoring (Loki)
 
----
-
-## Kubernetes (basic orchestration)
-
-A minimal Kubernetes setup is in the **`k8s/`** directory: namespace, Postgres (Secret, PVC, Deployment, Service), Content Service and Edge Cache (Deployments and Services), and an Ingress so you can run the stack on any cluster (minikube, kind, GKE, etc.).
+With Docker Compose, Loki (3100) and Promtail run automatically.
 
 ```bash
-# Build images and deploy (see k8s/README.md for cluster-specific steps)
-kubectl apply -f k8s/
-# Access via port-forward or Ingress
-kubectl -n aem port-forward svc/edge-cache 4000:4000
-```
+# Cache misses from edge-cache
+curl -G http://localhost:3100/loki/api/v1/query_range \
+  --data-urlencode 'query={container_name="edge-cache"} |= "MISS"'
 
-See **[k8s/README.md](k8s/README.md)** for image build/load instructions and Ingress controller setup.
+# Errors from content-service
+curl -G http://localhost:3100/loki/api/v1/query_range \
+  --data-urlencode 'query={container_name="content-service"} | json | level="error"'
+```
 
 ---
 
-## Technology Stack
+## Kubernetes
 
-- **Runtime**: Node.js + Express
-- **HTTP Client**: Axios
-- **Logging**: Pino + Pino-HTTP
-- **Testing**: Jest + Supertest
-- **Containerization**: Docker + Docker Compose
-- **Orchestration**: Kubernetes (basic manifests in `k8s/`)
-- **Monitoring**: Grafana Loki + Promtail
+Manifests in **`k8s/`**: namespace, Postgres (Secret, PVC, Deployment, Service), Content Service and Edge Cache (Deployments, Services), Ingress.
+
+```bash
+# Build images for your cluster (see k8s/README.md for minikube/kind)
+kubectl apply -f k8s/
+kubectl -n aem port-forward svc/edge-cache 4000:4000
+curl http://localhost:4000/pages/client1/en/1.2.0/home
+```
+
+See **[k8s/README.md](k8s/README.md)** for image build/load and Ingress setup.
+
+---
+
+## Technology stack
+
+Node.js, Express, Axios, Pino, Jest, Docker Compose, Kubernetes (basic), Grafana Loki + Promtail.
